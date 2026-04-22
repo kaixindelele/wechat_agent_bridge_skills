@@ -1,0 +1,23 @@
+{
+  "name": "wechat-codex-agent-bridge",
+  "version": "1.0.0",
+  "ilink_appid": "bot",
+  "description": "微信 ClawBot ↔ OpenAI Codex CLI 桥接，支持图文文件、会话续接、微信侧 model 和 sandbox 控制",
+  "type": "module",
+  "scripts": {
+    "setup": "CODEX_HOME=\"$PWD/.codex-home\" node --import tsx src/setup.ts",
+    "start": "CODEX_HOME=\"$PWD/.codex-home\" node --import tsx src/bridge.ts",
+    "dev": "CODEX_HOME=\"$PWD/.codex-home\" node --import tsx src/hot.ts",
+    "hot": "CODEX_HOME=\"$PWD/.codex-home\" node --import tsx src/hot.ts",
+    "typecheck": "tsc --noEmit",
+    "test:usage-footer": "CODEX_HOME=\"$PWD/.codex-home\" node --import tsx src/usage-footer.smoke.mjs"
+  },
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.6.0"
+  }
+}

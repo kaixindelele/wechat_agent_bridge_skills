@@ -1,0 +1,7 @@
+credentials.json
+bridge.config.json
+bridge-state.json
+.codex-home/
+node_modules/
+dist/
+.media_cache/
