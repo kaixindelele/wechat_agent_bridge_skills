@@ -5,7 +5,9 @@
 
 在 GPT Image 2 让任何人都能一键生成以假乱真的社媒截图的今天，你需要一个触手可及的事实核查工具——不是装一个新 App，不是打开一个网页，而是在你每天用的**微信**里，把截图丢过去，等一杯咖啡的时间，拿到一份带原始链接和权威来源的验证报告。
 
-本项目将 **微信** 与 **OpenAI Codex CLI** / **Cursor Agent CLI** 桥接，让你可以在微信对话中直接驱动本地 AI Agent——不仅能核查新闻，还能远程写代码、操作文件、执行任何 Agent 能做的事。
+本项目将 **微信** 与 **Cursor Agent CLI** / **OpenAI Codex CLI** 桥接，让你可以在微信对话中直接驱动本地 AI Agent——不仅能核查新闻，还能远程写代码、操作文件、执行任何 Agent 能做的事。
+
+默认推荐 **Cursor 版**：在微信事实核查场景下，Cursor 的 WebSearch 更适合先做原帖定位与多源交叉验证；**Codex 版**更适合强调 sandbox 权限控制和自动化执行的场景。
 
 ---
 
@@ -51,42 +53,15 @@ wechat_agent_bridge_skills/
 
 - **Node.js 18+**
 - 已安装并登录你选择的 Agent CLI:
-  - **Codex 用户**: `codex login`
   - **Cursor 用户**: `agent --version`（确认 CLI 可用）
+  - **Codex 用户**: `codex login`
 
 ### 一、选择你的 Agent，启动桥接
 
-<details>
-<summary><b>方案 A：OpenAI Codex CLI（推荐 Codex 订阅用户）</b></summary>
-
-```bash
-# 1. 进入桥接目录
-cd wechat-codex_agent_bridge-skill/templates
-
-# 2. 安装依赖
-npm install
-
-# 3. 创建配置（编辑 cwd 为你的项目目录）
-cp bridge.config.example.json bridge.config.json
-
-# 4. 微信扫码绑定（只需一次）
-npm run setup
-
-# 5. 用 tmux 在后台启动
-tmux new-session -d -s wechat-codex 'npm start'
-```
-
-验证运行状态：
-
-```bash
-tmux attach -t wechat-codex    # 查看日志
-# Ctrl+B, D 退出 tmux（不会终止进程）
-```
-
-</details>
+> 默认推荐先走 **Cursor Agent CLI** 路线：对新闻截图、社媒截图、爆料截图这类核查任务，网页检索能力通常更合适。
 
 <details>
-<summary><b>方案 B：Cursor Agent CLI（推荐 Cursor Pro 订阅用户）</b></summary>
+<summary><b>方案 A：Cursor Agent CLI（默认推荐）</b></summary>
 
 ```bash
 # 1. 进入桥接目录
@@ -108,7 +83,36 @@ tmux new-session -d -s wechat-cursor 'npm start'
 验证运行状态：
 
 ```bash
-tmux attach -t wechat-cursor
+tmux attach -t wechat-cursor    # 查看日志
+# Ctrl+B, D 退出 tmux（不会终止进程）
+```
+
+</details>
+
+<details>
+<summary><b>方案 B：OpenAI Codex CLI（适合 Codex 订阅用户）</b></summary>
+
+```bash
+# 1. 进入桥接目录
+cd wechat-codex_agent_bridge-skill/templates
+
+# 2. 安装依赖
+npm install
+
+# 3. 创建配置（编辑 cwd 为你的项目目录）
+cp bridge.config.example.json bridge.config.json
+
+# 4. 微信扫码绑定（只需一次）
+npm run setup
+
+# 5. 用 tmux 在后台启动
+tmux new-session -d -s wechat-codex 'npm start'
+```
+
+验证运行状态：
+
+```bash
+tmux attach -t wechat-codex
 # Ctrl+B, D 退出 tmux
 ```
 
@@ -117,6 +121,22 @@ tmux attach -t wechat-cursor
 ### 二、安装新闻事实核查 Skill 与推荐依赖
 
 桥接跑起来后，还需要让 Agent 知道怎么做事实核查。
+
+**Cursor 用户**（将 Skill 安装到 Cursor 技能目录）：
+
+```bash
+# 复制 skill 到 Cursor 能读到的位置
+mkdir -p ~/.cursor/skills/news-fact-checker
+cp news-fact-checker/SKILL.md ~/.cursor/skills/news-fact-checker/SKILL.md
+
+# 推荐：在首次配置时一并安装最近 30 天研究依赖
+bash news-fact-checker/dependencies/install-skill-deps.sh cursor
+```
+
+上述脚本会把：
+
+- `last30days` 安装到 `~/.cursor/skills/last30days`
+- `last30days-cn` 安装到 `~/.cursor/skills/last30days-cn`
 
 **Codex 用户**（将 Skill 安装到 Codex 技能目录）：
 
@@ -133,21 +153,6 @@ bash news-fact-checker/dependencies/install-skill-deps.sh codex
 
 - `last30days` 安装到 `~/.codex/skills/last30days`
 - `last30days-cn` 安装到 `~/.codex/skills/last30days-cn`
-
-**Cursor 用户**（将 Skill 安装到 Cursor 技能目录）：
-
-```bash
-mkdir -p ~/.cursor/skills/news-fact-checker
-cp news-fact-checker/SKILL.md ~/.cursor/skills/news-fact-checker/SKILL.md
-
-# 推荐：在首次配置时一并安装最近 30 天研究依赖
-bash news-fact-checker/dependencies/install-skill-deps.sh cursor
-```
-
-上述脚本会把：
-
-- `last30days` 安装到 `~/.cursor/skills/last30days`
-- `last30days-cn` 安装到 `~/.cursor/skills/last30days-cn`
 
 如果你在 OpenClaw / ClawHub 环境里使用这些 skills，可执行：
 
@@ -198,18 +203,6 @@ Meta 于4月21日宣布将在美国员工电脑上安装追踪软件...
 
 ## ⚙️ 配置参考
 
-### Codex 版 `bridge.config.json`
-
-| 字段 | 默认值 | 说明 |
-|------|--------|------|
-| `cwd` | `""` | **必填**，Agent 的工作目录 |
-| `codexPath` | `"codex"` | Codex CLI 路径 |
-| `model` | `""` | 模型名称，留空用默认 |
-| `sandboxMode` | `"workspace-write"` | `read-only` / `workspace-write` / `danger-full-access` |
-| `agentTimeoutMs` | `1800000` | 单次任务超时（毫秒） |
-| `enableSession` | `true` | 会话续接 |
-| `allowedUserIds` | `[]` | 白名单，空 = 不限制 |
-
 ### Cursor 版 `bridge.config.json`
 
 | 字段 | 默认值 | 说明 |
@@ -220,6 +213,18 @@ Meta 于4月21日宣布将在美国员工电脑上安装追踪软件...
 | `force` | `true` | `true` = 自动执行所有工具；`false` = 需微信逐条确认 |
 | `agentTimeoutMs` | `1800000` | 单次任务超时（毫秒） |
 | `showToolCalls` | `true` | 是否在微信显示工具调用过程 |
+| `allowedUserIds` | `[]` | 白名单，空 = 不限制 |
+
+### Codex 版 `bridge.config.json`
+
+| 字段 | 默认值 | 说明 |
+|------|--------|------|
+| `cwd` | `""` | **必填**，Agent 的工作目录 |
+| `codexPath` | `"codex"` | Codex CLI 路径 |
+| `model` | `""` | 模型名称，留空用默认 |
+| `sandboxMode` | `"workspace-write"` | `read-only` / `workspace-write` / `danger-full-access` |
+| `agentTimeoutMs` | `1800000` | 单次任务超时（毫秒） |
+| `enableSession` | `true` | 会话续接 |
 | `allowedUserIds` | `[]` | 白名单，空 = 不限制 |
 
 ---
@@ -323,9 +328,9 @@ description: >
 <details>
 <summary>发消息后没有任何回复？</summary>
 
-1. 检查 tmux 会话中的日志：`tmux attach -t wechat-codex`
-2. Codex 用户：确认已 `codex login`
-3. Cursor 用户：确认 `agent --version` 可用，或已设置 `CURSOR_API_KEY`
+1. 检查 tmux 会话中的日志：Cursor 版用 `tmux attach -t wechat-cursor`，Codex 版用 `tmux attach -t wechat-codex`
+2. Cursor 用户：确认 `agent --version` 可用，或已设置 `CURSOR_API_KEY`
+3. Codex 用户：确认已 `codex login`
 4. 检查 `bridge.config.json` 中的 `cwd` 路径是否存在
 </details>
 
@@ -340,18 +345,22 @@ description: >
 
 ```bash
 # 再次启动即可，会话状态保存在 bridge-state.json
-tmux new-session -d -s wechat-codex 'cd /path/to/templates && npm start'
+tmux new-session -d -s wechat-cursor 'cd /path/to/wechat-cursor_agent_bridge-skill/templates && npm start'
+
+# 如果你使用的是 Codex 版：
+tmux new-session -d -s wechat-codex 'cd /path/to/wechat-codex_agent_bridge-skill/templates && npm start'
 ```
 </details>
 
 <details>
 <summary>Codex 版和 Cursor 版选哪个？</summary>
 
-| | Codex 版 | Cursor 版 |
+| | Cursor 版 | Codex 版 |
 |---|---|---|
-| 需要的订阅 | OpenAI Codex | Cursor Pro |
-| 权限模型 | sandbox 模式 | 逐条微信审批 |
-| 适合 | 批量任务、自动化 | 需要精细控制的场景 |
+| 需要的订阅 | Cursor Pro | OpenAI Codex |
+| 默认推荐场景 | 新闻截图核查、网页检索、多源交叉验证 | 批量任务、自动化执行 |
+| 权限模型 | 逐条微信审批（`force: false`） | sandbox 模式 |
+| 特点 | WebSearch 更适合作为默认事实核查入口 | 更适合强调执行权限边界和自动化流程 |
 </details>
 
 ---
