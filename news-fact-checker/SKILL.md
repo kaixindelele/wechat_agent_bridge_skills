@@ -58,6 +58,14 @@ description: >
 - `site:x.com @账号名 关键词`
 - `x.com 账号名 关键内容片段`
 
+注意：X 的公开搜索和搜索引擎收录都比较严格。如果直接 WebSearch 对 `x.com` 命中很差、结果为空、或只返回二手转述，**不能据此直接判定原帖不存在**；要立即切换为“**实时 WebSearch + XCancel 镜像**”双轨检索，继续交叉定位原帖。
+
+X 检索补充策略：
+- 原链检索：`site:x.com @账号名 关键词`、`site:x.com/账号名/status 关键词`
+- 镜像检索：`site:xcancel.com @账号名 关键词`、`site:xcancel.com/账号名/status 关键词`
+- 如果已知账号名和 `status ID`，优先直接尝试：`https://x.com/<账号>/status/<id>` 与 `https://xcancel.com/<账号>/status/<id>`
+- 输出时链接优先级保持：原链 `x.com` > 镜像 `xcancel.com` > 其他聚合/转述页
+
 ### Step 3: 搜索权威媒体报道与近 30 天上下文
 
 用 WebSearch 搜索**多家权威媒体**的报道来交叉验证：
