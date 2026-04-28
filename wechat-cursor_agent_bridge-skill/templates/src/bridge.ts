@@ -396,6 +396,20 @@ function persistConfigModel(newModel: string): void {
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(raw, null, 2) + '\n', 'utf-8');
 }
 
+function persistConfigCwd(newCwd: string): void {
+  let raw: Record<string, unknown> = {};
+  if (fs.existsSync(CONFIG_PATH)) {
+    try {
+      raw = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8')) as Record<string, unknown>;
+    } catch (e) {
+      console.error('[bridge] parse bridge.config.json before persist failed:', e);
+      raw = {};
+    }
+  }
+  raw.cwd = newCwd;
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(raw, null, 2) + '\n', 'utf-8');
+}
+
 /**
  * 递归终止指定进程的所有子进程（不杀父进程本身）。
  * 用于"跳过当前工具调用"：杀掉正在执行的 shell 子进程，
@@ -1077,6 +1091,8 @@ async function main() {
         '  /model <slug>  — 切换模型并写回 bridge.config.json（下一轮生效）',
         '  /model clear   — 恢复 Cursor 默认模型',
         '  /model refresh — 强制刷新模型列表缓存',
+        '  /cwd           — 查看当前工作目录',
+        '  /cwd <路径>    — 切换工作目录（支持绝对/相对路径）',
         '',
         '直接发文字或图片，由 Cursor Agent 处理。',
         '忙时发送的消息默认作为**追问**，会在当前任务完成后融入同一对话上下文中处理。',
@@ -1208,6 +1224,57 @@ async function main() {
         parts.push('当前有任务正在执行，若要立刻切换请先 /stop。');
       }
       await safeSend(credentials, userId, contextToken, parts.join('\n'));
+      return;
+    }
+
+    if (text === '/cwd' || text.startsWith('/cwd ')) {
+      const arg = text.slice(4).trim();
+
+      if (!arg) {
+        await safeSend(credentials, userId, contextToken, [
+          `当前工作目录：${cfg.cwd}`,
+          '',
+          '子命令：',
+          '  /cwd <路径>  — 切换工作目录并写回 bridge.config.json（下一轮生效）',
+        ].join('\n'));
+        return;
+      }
+
+      const resolved = path.isAbsolute(arg) ? arg : path.resolve(cfg.cwd, arg);
+
+      if (!fs.existsSync(resolved)) {
+        await safeSend(credentials, userId, contextToken,
+          `⚠️ 目录不存在：${resolved}`);
+        return;
+      }
+
+      const stat = fs.statSync(resolved);
+      if (!stat.isDirectory()) {
+        await safeSend(credentials, userId, contextToken,
+          `⚠️ 路径存在但不是目录：${resolved}`);
+        return;
+      }
+
+      const oldCwd = cfg.cwd;
+      cfg.cwd = resolved;
+      try {
+        persistConfigCwd(resolved);
+      } catch (e) {
+        await safeSend(credentials, userId, contextToken,
+          `⚠️ 内存已切换到 ${resolved}，但写回 bridge.config.json 失败：${(e as Error).message}`);
+        return;
+      }
+
+      const lines: string[] = [
+        `✅ 工作目录已切换：`,
+        `   ${oldCwd}`,
+        `   → ${resolved}`,
+        '已写回 bridge.config.json。正在运行的任务不受影响，下一轮对话生效。',
+      ];
+      if (isBusy) {
+        lines.push('当前有任务正在执行，若要立刻切换请先 /stop。');
+      }
+      await safeSend(credentials, userId, contextToken, lines.join('\n'));
       return;
     }
 
