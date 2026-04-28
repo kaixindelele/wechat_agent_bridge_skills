@@ -2,7 +2,7 @@
 
 > **把微信变成你的通用小助手。**  
 > **已完成： 新闻资讯-事实核查入口。**  
-> **待更新： 论文翻译助手**  
+> **已完成： PDF 论文自动翻译（BabelDOC）**  
 > **待更新： 开源项目复现-分析助手**  
 > 截图发给微信机器人，几分钟后收到深度验证报告。
 
@@ -34,8 +34,8 @@
 | **图片/文件处理** | 发图片、文件、语音给微信机器人，Agent 可以直接读取和处理 |
 | **会话记忆** | 自动续接上下文，不用每次重新描述问题 |
 | **权限管控** | Cursor 版支持微信端逐条审批危险操作；Codex 版通过 sandbox 模式控制 |
-| **论文翻译** | 待上传，基于babeldoc，实现对arxiv论文链接或者pdf文件的翻译|
-| **开源项目分析** | 待上传，对开源项目的代码分析和本地复现报告|
+| **论文翻译** | 发送 arxiv 链接或 PDF → BabelDOC 引擎保留原版式翻译 → 返回中文标题命名的 PDF |
+| **开源项目分析** | 待上传，对开源项目的代码分析和本地复现报告 |
 
 ---
 
@@ -50,6 +50,14 @@ wechat_agent_bridge_skills/
 │       ├── README.md
 │       ├── install-skill-deps.sh
 │       └── skills.lock.json
+├── babeldoc-trans/                        ← PDF 论文自动翻译 Skill（BabelDOC）
+│   ├── SKILL.md
+│   ├── README.md
+│   ├── scripts/
+│   │   ├── setup.sh                      ← 一键安装依赖
+│   │   └── translate.py                  ← 翻译执行脚本
+│   └── references/
+│       └── usage_guide.md                ← 详细参数与排查指南
 ├── wechat-codex_agent_bridge-skill/       ← 微信 ↔ OpenAI Codex CLI 桥接
 │   ├── SKILL.md
 │   ├── 快速启动.md
@@ -188,6 +196,37 @@ bash news-fact-checker/dependencies/install-skill-deps.sh agents
 
 这样用户在初次配置完成后，Agent 就已经具备了“截图核查 + 最近 30 天上下文研究”的组合能力。
 
+### 二（可选）、安装 PDF 论文翻译 Skill
+
+**Cursor 用户**：
+
+```bash
+# 复制 skill
+mkdir -p ~/.cursor/skills/babeldoc-trans
+cp -r babeldoc-trans/* ~/.cursor/skills/babeldoc-trans/
+
+# 安装 Python 依赖
+bash ~/.cursor/skills/babeldoc-trans/scripts/setup.sh
+
+# 配置 API Key（加入 ~/.bashrc 持久化）
+export BABELDOC_API_KEY=sk-your-api-key-here
+```
+
+**Codex 用户**：
+
+```bash
+mkdir -p ~/.codex/skills/babeldoc-trans
+cp -r babeldoc-trans/* ~/.codex/skills/babeldoc-trans/
+bash ~/.codex/skills/babeldoc-trans/scripts/setup.sh
+export BABELDOC_API_KEY=sk-your-api-key-here
+```
+
+安装完成后，在微信中发送 arxiv 链接即可自动触发翻译：
+
+> **https://arxiv.org/abs/2412.13211**
+
+等待 1-3 分钟，你会收到翻译好的中文 PDF，保留原始版式。
+
 ### 三、开始使用
 
 打开微信，找到你绑定的 ClawBot 机器人对话，发送一张新闻截图，然后说：
@@ -263,6 +302,8 @@ Meta 于4月21日宣布将在美国员工电脑上安装追踪软件...
 | `/model` | 查看当前模型 |
 | `/model <名称>` | 切换模型 |
 | `/model clear` | 恢复默认模型 |
+| `/cwd` | 查看当前工作目录 |
+| `/cwd <路径>` | 切换工作目录（支持绝对/相对路径） |
 
 Codex 版额外支持：
 
